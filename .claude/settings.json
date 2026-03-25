@@ -1,0 +1,39 @@
+{
+  "model": "opusplan",
+  "effortLevel": "high",
+  "permissions": {
+    "allow": [
+      "Read(*)",
+      "Write(C:\\Chemtrace\\src\\**)",
+      "Write(C:\\Chemtrace\\tests\\**)",
+      "Write(C:\\Chemtrace\\data\\**)",
+      "Write(C:\\Chemtrace\\.gitignore)",
+      "Write(C:\\Chemtrace\\requirements.txt)",
+      "Write(C:\\Chemtrace\\pyproject.toml)",
+      "Write(C:\\Chemtrace\\.env.example)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(pytest *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(mkdir *)"
+    ],
+    "deny": [
+      "Read(C:\\Chemtrace\\.env)",
+      "Bash(rm -rf *)",
+      "Bash(git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(npm *)"
+    ]
+  }
+}
