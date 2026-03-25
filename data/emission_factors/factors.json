@@ -1,0 +1,23 @@
+{
+  "electricity_de_grid_mix": {
+    "value": 0.000380,
+    "unit": "tCO2e/kWh",
+    "source": "UBA Emissionsfaktoren",
+    "year": 2024,
+    "note": "[Pendiente verificación UBA 2024]"
+  },
+  "natural_gas": {
+    "value": 0.000202,
+    "unit": "tCO2e/kWh",
+    "source": "Synthetic ESG Report (ChemTrace demo data)",
+    "year": 2024,
+    "note": "Based on typical European natural gas factor"
+  },
+  "diesel": {
+    "value": 0.002680,
+    "unit": "tCO2e/litre",
+    "source": "Synthetic ESG Report (ChemTrace demo data)",
+    "year": 2024,
+    "note": "Based on typical European diesel factor, consistent with DEFRA 2024"
+  }
+}

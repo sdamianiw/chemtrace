@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "chemtrace"
+version = "0.1.0"
+description = "Open-source Scope 1-3 carbon accounting pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    "pdfplumber>=0.10.0",
+    "pandas>=2.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+rag = ["chromadb>=0.4.0", "sentence-transformers>=2.2.0", "requests>=2.31.0"]
+dev = ["pytest>=7.0.0"]
+
+[project.scripts]
+chemtrace = "chemtrace.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
