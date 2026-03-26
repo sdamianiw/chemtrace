@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-rag = ["chromadb>=0.4.0", "sentence-transformers>=2.2.0", "requests>=2.31.0"]
+rag = ["chromadb>=1.0.0", "sentence-transformers>=2.2.0", "requests>=2.31.0"]
 dev = ["pytest>=7.0.0"]
 
 [project.scripts]
