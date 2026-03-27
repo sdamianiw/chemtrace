@@ -4,7 +4,7 @@ Commands:
     chemtrace parse  [--input-dir PATH] [--output-dir PATH]
     chemtrace status
     chemtrace export [--output PATH]
-    chemtrace ask    "question"   (stub -- Phase 02)
+    chemtrace ask    "question"
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ def main(argv: list[str] | None = None) -> None:
         help="Output CSV file path",
     )
 
-    # ask (stub for Phase 02)
+    # ask
     p_ask = subparsers.add_parser("ask", help="Ask a question about energy data")
     p_ask.add_argument("question", nargs="?", default=None, help="Natural language question")
 
@@ -125,25 +125,50 @@ def _cmd_status() -> None:
 
 def _cmd_export(args: argparse.Namespace) -> None:
     from chemtrace.config import Config
-    from chemtrace.etl import run_pipeline
 
     config = Config()
-    result = run_pipeline(config)
+    csv_path = config.output_dir / "invoices.csv"
 
-    if not result.csv_path or not result.csv_path.exists():
-        print("ERROR: No data to export (pipeline produced no records)")
+    if not csv_path.exists():
+        print("No data found. Run `chemtrace parse` first.", file=sys.stderr)
         sys.exit(1)
 
-    output_path = args.output if args.output else config.output_dir / "invoices.csv"
-
-    if output_path.resolve() != result.csv_path.resolve():
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(result.csv_path, output_path)
-
-    print(f"Exported {result.successful} records -> {output_path}")
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(csv_path, args.output)
+        print(f"Exported -> {args.output}")
+    else:
+        print(str(csv_path))
 
 
 def _cmd_ask(args: argparse.Namespace) -> None:
-    print("Not implemented yet. Coming in Phase 02.")
-    print("The 'ask' command requires Ollama for local LLM inference.")
-    print("Run 'chemtrace status' to check indexed documents.")
+    if args.question is None:
+        print('Usage: chemtrace ask "your question here"', file=sys.stderr)
+        sys.exit(1)
+
+    from chemtrace.config import Config
+    from chemtrace.rag_client import ask
+    from chemtrace.vector_store import VectorStore
+
+    config = Config()
+    store = VectorStore(config)
+
+    print("Thinking...", file=sys.stderr)
+    response = ask(args.question, config, store)
+
+    if response.answer.startswith("Error:"):
+        print(response.answer, file=sys.stderr)
+        sys.exit(1)
+
+    print(response.answer)
+    print()
+    print("Sources:")
+    seen: set[str] = set()
+    for src in response.sources:
+        fname = src.get("filename", "")
+        if fname and fname not in seen:
+            seen.add(fname)
+            print(f"  - {fname}")
+
+    if response.tokens_used:
+        print(f"(Model: {response.model}, Tokens: {response.tokens_used})")
