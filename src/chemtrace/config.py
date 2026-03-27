@@ -36,7 +36,8 @@ class Config:
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1:8b"
+    ollama_model: str = "llama3.2:3b"
+    ollama_timeout: int = 60
 
     # RAG
     rag_top_k: int = 4
@@ -58,6 +59,8 @@ class Config:
             self.ollama_base_url = v
         if v := os.getenv("OLLAMA_MODEL"):
             self.ollama_model = v
+        if v := os.getenv("OLLAMA_TIMEOUT"):
+            self.ollama_timeout = int(v)
         if v := os.getenv("RAG_TOP_K"):
             self.rag_top_k = int(v)
         if v := os.getenv("RAG_TEMPERATURE"):
