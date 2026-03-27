@@ -115,6 +115,12 @@ def _build_record(
     if consumption == 0.0 and line_items:
         logger.warning("All line items have null consumption in %s", pdf_path.name)
 
+    # Consumption unit from first line item (H10 fix)
+    consumption_unit: str = next(
+        (li.consumption_unit for li in line_items if li.consumption_unit),
+        "kWh",
+    )
+
     # Primary energy type from first line item with a non-None type
     energy_type: str | None = next(
         (li.energy_type for li in line_items if li.energy_type),
@@ -147,6 +153,7 @@ def _build_record(
         "energy_amount": consumption,
         "total_eur": data.get("total_amount") or "unknown",
         "currency": data.get("currency") or "EUR",
+        "consumption_unit": consumption_unit,
     }
 
     return {
@@ -161,6 +168,7 @@ def _build_record(
         "billing_period_to": data.get("billing_period_to"),
         "energy_type": energy_type,
         "consumption_kwh": consumption,
+        "consumption_unit": consumption_unit,
         "total_eur": data.get("total_amount"),
         "currency": data.get("currency") or "EUR",
         "emissions_tco2": emissions_tco2,

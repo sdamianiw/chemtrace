@@ -45,8 +45,9 @@ def build_content(record: dict) -> str:
     energy_amount = record.get("energy_amount", "unknown")
     total_eur = record.get("total_eur", "unknown")
     currency = record.get("currency", "EUR")
+    unit = record.get("consumption_unit", "kWh")
     return (
         f"Invoice {blob_name} for site {site} covers period {period} "
-        f"for {energy_type} energy. Energy amount is {energy_amount} kWh. "
+        f"for {energy_type} energy. Energy amount is {energy_amount} {unit}. "
         f"Total cost is {total_eur} {currency}."
     )

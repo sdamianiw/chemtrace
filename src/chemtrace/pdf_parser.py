@@ -34,6 +34,7 @@ class LineItem:
     consumption_kwh: float | None = None
     unit_price: float | None = None
     amount_eur: float | None = None
+    consumption_unit: str = "kWh"
 
 
 @dataclass
@@ -93,7 +94,7 @@ def parse_invoice(pdf_path: Path) -> ParseResult:
             success=False,
             data=data,
             warnings=warnings,
-            error="No invoice number found — file may not be an invoice",
+            error="No invoice number found - file may not be an invoice",
         )
 
     # --- Parse line items (table-first, regex fallback) ---
@@ -216,6 +217,13 @@ def _extract_line_items_from_tables(
                 break
         if header_idx is None:
             continue
+        # Detect consumption unit from column header text (H10 fix)
+        consumption_unit = "kWh"
+        cons_idx = col_map.get("consumption")
+        if cons_idx is not None:
+            header_cell = str(table[header_idx][cons_idx] or "").lower()
+            if "litre" in header_cell or "liter" in header_cell:
+                consumption_unit = "litres"
         # Parse data rows
         for row in table[header_idx + 1 :]:
             if not row or all(c is None or str(c).strip() == "" for c in row):
@@ -230,6 +238,9 @@ def _extract_line_items_from_tables(
             raw_energy = get("energy_type")
             energy_type = _classify_energy_type(raw_energy) if raw_energy else None
 
+            # H1 audit: force litres for diesel regardless of header
+            item_unit = "litres" if energy_type == "diesel" else consumption_unit
+
             items.append(LineItem(
                 meter_id=get("meter_id"),
                 energy_type=energy_type,
@@ -238,6 +249,7 @@ def _extract_line_items_from_tables(
                 consumption_kwh=clean_number(get("consumption")),
                 unit_price=clean_number(get("unit_price")),
                 amount_eur=clean_number(get("amount")),
+                consumption_unit=item_unit,
             ))
     return items
 
@@ -262,13 +274,17 @@ def _extract_line_items_from_text(
     )
     for m in re.finditer(pattern, text, re.MULTILINE):
         raw_energy = m.group(2).strip()
+        energy_type = _classify_energy_type(raw_energy)
+        # H1 audit: force litres for diesel regardless of context
+        item_unit = "litres" if energy_type == "diesel" else "kWh"
         items.append(LineItem(
             meter_id=m.group(1),
-            energy_type=_classify_energy_type(raw_energy),
+            energy_type=energy_type,
             period_from=m.group(3),
             period_to=m.group(4),
             consumption_kwh=clean_number(m.group(5)),
             unit_price=clean_number(m.group(6)),
             amount_eur=clean_number(m.group(7)),
+            consumption_unit=item_unit,
         ))
     return items

@@ -100,4 +100,5 @@ def _to_metadata(record: dict) -> dict:
         "currency": record.get("currency") or "EUR",
         "invoice_number": record.get("invoice_number") or "",
         "vendor_name": record.get("vendor_name") or "",
+        "consumption_unit": record.get("consumption_unit") or "kWh",
     }

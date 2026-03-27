@@ -59,6 +59,7 @@ PATTERNS: dict[str, list[str]] = {
         r"Total\s+amount\s+due\s*:\s*([\d,]+\.?\d*)\s*(?:EUR)?",
         r"Total\s*:\s*([\d,]+\.?\d*)\s*(?:EUR)?",
         r"Gesamtbetrag\s*:\s*([\d.,]+)\s*(?:EUR)?",
+        r"Gesamt\s*:?\s*([\d.,]+)\s*(?:EUR)?",
     ],
 
     # Energy type keyword classification (applied to lowercase cell text)
@@ -73,11 +74,11 @@ PATTERNS: dict[str, list[str]] = {
 # Keys are canonical field names; values are substrings matched case-insensitively
 # against the table header row. First match wins.
 COLUMN_ALIASES: dict[str, list[str]] = {
-    "meter_id": ["meter id", "meter-id", "zählernummer", "zaehlernummer"],
+    "meter_id": ["meter id", "meter-id", "zählernummer", "zaehlernummer", "zaehler-id"],
     "energy_type": ["energy type", "energieart", "energietyp"],
     "period_from": ["from", "von"],
     "period_to": ["to", "bis"],
     "consumption": ["consumption", "verbrauch"],
-    "unit_price": ["unit price", "einheitspreis"],
+    "unit_price": ["unit price", "einheitspreis", "stueckpreis", "stückpreis"],
     "amount": ["amount", "betrag", "summe"],
 }
