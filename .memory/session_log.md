@@ -3,38 +3,32 @@
 ## Read at session start -> know where we left off.
 
 ## Last Session
-- **Date:** 2026-03-27
-- **Phase:** Phase 02 -- Task 2 complete
-- **What was done:** Wire CLI ask + fix export NB-01 + test_rag.py
-  - _cmd_ask(): replaced stub with full RAG pipeline call
-    - Guard for missing question arg (exit 1 with usage to stderr)
-    - Lazy imports: Config, VectorStore, ask
-    - "Thinking..." to stderr before Ollama call (TD-09)
-    - Formatted output: answer + deduplicated sources + (Model/Tokens) footer
-    - Error: prefix response -> stderr + exit 1
-  - _cmd_export(): fixed NB-01 -- removed run_pipeline() call
-    - File-existence check on output/invoices.csv
-    - If exists: copy to --output or print path
-    - If missing: stderr + exit 1
-  - tests/test_rag.py: created (8 unit + 2 integration tests)
-    - Unit: mocked Ollama (requests.post), ConnectionError, Timeout, empty store
-    - Prompt tests: format_context (1 doc + multi), SYSTEM_PROMPT phrases, build_user_message
-    - Integration: @skipif(not _ollama_available()) guard
-  - tests/test_cli.py: replaced test_ask_stub with 4 tests (no_question, calls_rag, error_response, export_no_csv)
-  - 73/73 unit tests pass (was 62)
+- **Date:** 2026-03-28
+- **Phase:** Phase 02 -- Task 3 complete. Phase 02 FULLY COMPLETE.
+- **What was done:** Integration testing + prompt verification + VERIFY.md
+  - Integration tests: 2/2 pass with live Ollama llama3.2:3b (68.98s)
+  - Manual test battery: 6/6 queries pass
+    - Q1: "electricity consumption Jan 2024" -> 478,800.0 kWh, correct source (PASS)
+    - Q2: "natural gas cost Jan 2024" -> 26,925.23 EUR, correct source (PASS)
+    - Q3: "total diesel consumption" -> 8,500.0 litres, correct source (PASS)
+    - Q4: "compare electricity costs Jan vs Mar" -> 116,461.4 EUR vs 108,096.61 EUR, both sources (PASS)
+    - Q5: "capital of Germany" -> exact refusal phrase (PASS)
+    - Q6: "write me a poem about energy" -> exact refusal phrase (PASS)
+  - Prompt tuning: 0 iterations needed -- system prompt worked correctly first try
+  - CODE_VERIFIER: 6/6 steps, 0 blocking findings, confidence 0.97/1.0
+  - VERIFY.md created at .specs/phases/02-rag-client/VERIFY.md
 - **Verified:**
-  - `pytest tests/ -v -k "not integration"` -> 73/73 pass
-  - `python -m chemtrace ask "test"` -> usage error on stderr, exit 1 (no Ollama)
-  - `python -m chemtrace export` -> prints path to output/invoices.csv instantly
-  - Manual mock trace: formatted answer + sources + footer works correctly
-  - CODE_VERIFIER confidence: 0.97/1.0
-- **What's next:** Phase 02 -- Task 3 (remaining items from CONTEXT.md)
-  - config.py: default ollama_model -> "llama3.2:3b", add OLLAMA_TIMEOUT env var
-  - vector_store.py: NB-05 HF Hub telemetry env vars (check if already done)
-  - .env.example: update defaults
-  - End-to-end test with Ollama running
+  - `pytest tests/ -k "not integration"` -> 73/73 pass
+  - `pytest tests/test_rag.py -k "integration"` -> 2/2 pass
+  - Phase 02 gate: G-01 through G-11 = 10/11 PASS, 1/11 PARTIAL (NB-06, non-blocking)
+- **What's next:** Phase 03 -- Docker Deploy
+  - Read .specs/phases/03-docker/ if it exists
+  - Otherwise: create Phase 03 specs (Dockerfile, docker-compose.yml, health check)
+  - Tag v0.2.0-rag-client before starting Phase 03
 - **Blockers:** None
 - **Pending decisions:** None
 - **Non-blocking issues:**
-  - Integration tests not run (Ollama not available in this session)
-  - invoice_date for German-format stored as DD.MM.YYYY not ISO (pre-existing)
+  - NB-06: Residual HF Hub unauthenticated warning + BertModel LOAD REPORT on stderr
+    - NB-05 fix suppressed HF_HUB_DISABLE_TELEMETRY but not HF_TOKEN nag
+    - Fix: add TRANSFORMERS_VERBOSITY=error to vector_store.py env block (Phase 03 backlog)
+  - invoice_date for German-format stored as DD.MM.YYYY not ISO (pre-existing, Phase 01)
