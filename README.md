@@ -244,6 +244,14 @@ To add a new energy type: add one entry to `factors.json` — no code changes re
 
 To switch models: set `OLLAMA_MODEL=llama3.1:8b` in your `.env` file.
 
+**Windows (WSL2) users:** Docker runs inside WSL2. Create or edit `~/.wslconfig` to ensure sufficient memory:
+```ini
+[wsl2]
+memory=4GB
+```
+
+After editing, run `wsl --shutdown` and restart Docker Desktop. With `memory=2GB` or less, Ollama cannot load the model and will fail with HTTP 500.
+
 ---
 
 ## Contributing

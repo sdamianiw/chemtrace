@@ -162,38 +162,46 @@ Justification: All functional tests pass. Image size and RAM limitations are doc
 | KL-04 | Ollama model pull (~2 GB) on first run | First `docker compose run` takes 3-5 min extra | entrypoint.sh handles auto-pull. Documented in README. |
 | KL-05 | pytest in requirements.txt but not needed in Docker image | Slightly larger image | Low impact. Tests excluded by .dockerignore. pytest not installed in image. |
 | KL-06 | entrypoint.sh requires --entrypoint override for import-only tests | Container tests need special syntax | Not a user-facing issue. Development/CI concern only. |
+| KL-07 | WSL2 memory=2GB causes Ollama OOM ("llama runner process has terminated") | Model cannot load for inference | WSL2 requires minimum 4 GB memory for Docker path. Added to README. .wslconfig memory=4GB |
+| KL-08 | OLLAMA_TIMEOUT=60 insufficient on 8 GB RAM machines | First inference times out (>60s due to swapping) | Default changed to OLLAMA_TIMEOUT=180 in .env.example |
+| KL-09 | Embedding model re-downloads on each docker compose run --rm | ~90 MB download per run (~10-15s) | Post-MVP: mount HuggingFace cache volume at /root/.cache/huggingface |
 
 ---
 
-## 9. MANUAL TESTING CHECKLIST (Sebas, post-session)
+## 9. MANUAL TESTING CHECKLIST — E2E RESULTS (2026-03-28, Sebas)
 
-**Prerequisites:** Close Cursor + Claude Code first (free RAM). Docker Desktop running.
+**Prerequisites applied:** Cursor closed, Edge closed, Docker Desktop running, WSL2 memory=4GB.
 
-```bash
-# 1. Start Ollama
-docker compose up -d ollama
+**Issues encountered and resolved:**
+-> Initial Ollama image pull hung at 92% RAM (WSL2 default ~2.8 GB + system = OOM). Fix: .wslconfig memory limit + close Edge.
+-> First `ask` command: Ollama HTTP 500 ("llama runner process has terminated"). Root cause: WSL2 memory=2GB insufficient for 1.9 GB model. Fix: increase to memory=4GB.
+-> Second `ask` attempt: timeout at 60s (model loaded but inference slow due to swapping). Fix: OLLAMA_TIMEOUT=180.
 
-# 2. Wait for healthy (~30-60s)
-docker compose ps
-# Expected: ollama service "healthy"
+**Final test results (all with WSL2 memory=4GB):**
 
-# 3. Parse invoices
-docker compose run --rm chemtrace parse
-# Expected: 5 invoices parsed, CSV generated
+| # | Command | Expected | Actual | Status |
+|---|---|---|---|---|
+| 1 | `docker compose up -d ollama` | Container starts | Started, network + volume created | **PASS** |
+| 2 | `docker compose ps` | healthy | healthy (after ~60s) | **PASS** |
+| 3 | `docker compose run --rm chemtrace parse` | 5 invoices parsed | 5 successful, 1 failed (ESG report, expected) | **PASS** |
+| 4 | Emission calculations | Match known values | All 5 exact (see below) | **PASS** |
+| 5 | `docker compose run --rm -e OLLAMA_TIMEOUT=180 chemtrace ask "..."` | Grounded answer + source | "478,800.0 kWh" + correct source cited | **PASS** |
+| 6 | `docker compose run --rm -e OLLAMA_TIMEOUT=180 chemtrace status` | 5 documents | ChromaDB status: ok, Documents: 5 | **PASS** |
+| 7 | `docker compose down` | Clean shutdown | 2/2 removed | **PASS** |
+| 8 | `ls output/invoices.csv` | File persists on host | 1804 bytes | **PASS** |
+| 9 | `cat output/errors.csv` | Only ESG report error | 1 entry: ESG_Report parse_error | **PASS** |
 
-# 4. Ask a question
-docker compose run --rm chemtrace ask "What was electricity consumption in Jan 2024?"
-# Expected: Grounded answer with source citation
+**Emission verification (arithmetic check):**
 
-# 5. Check status
-docker compose run --rm chemtrace status
-# Expected: 5 documents indexed
+| Invoice | Input | Factor | Expected tCO2e | Actual | Match |
+|---|---|---|---|---|---|
+| Diesel Feb 2024 | 8,500 L | 0.00268 | 22.780 | 22.780 | Exact |
+| Electricity Jan 2024 | 478,800 kWh | 0.000380 | 181.944 | 181.944 | Exact |
+| Electricity Feb 2024 | 415,300 kWh | 0.000380 | 157.814 | 157.814 | Exact |
+| Electricity Mar 2024 | 453,100 kWh | 0.000380 | 172.178 | 172.178 | Exact |
+| Natural Gas Jan 2024 | 310,800 kWh | 0.000202 | 62.782 | 62.782 | Exact |
 
-# 6. Clean up
-docker compose down
-```
-
-**Note:** With 8 GB RAM, run commands ONE AT A TIME. Do not run parse and ask simultaneously. If OOM occurs, restart Docker Desktop and retry with fewer background processes.
+**7/7 tests PASS. 5/5 emissions exact.**
 
 ---
 
@@ -201,14 +209,18 @@ docker compose down
 
 Phase 03 (Docker Deploy) is **COMPLETE** with all 12 gate checks passing. The Docker image builds, all Python modules import correctly inside the container, and the full MVP verification gate (AC-01 through AC-10) passes.
 
-Primary trade-off: image size (9.14 GB) is 3.6x larger than estimated due to PyTorch and transitive dependencies. This is acceptable for MVP. Post-MVP optimization (ONNX runtime, multi-stage build, torch CPU-only) can reduce this to ~1-2 GB.
+The docker compose end-to-end test (parse -> ask -> status) was executed manually on 2026-03-28 with 7/7 tests passing. All 5 emission calculations match expected values exactly. The RAG client returned a grounded answer with correct source citation.
 
-The docker compose end-to-end test (parse → ask → status) is deferred to manual execution by Sebas due to 8 GB RAM constraint during development.
+Primary trade-offs documented:
+-> Image size: 9.14 GB (3.6x estimate). Acceptable for MVP. ONNX migration post-MVP.
+-> WSL2 requires minimum 4 GB memory for Docker path (2 GB causes OOM).
+-> OLLAMA_TIMEOUT increased from 60s to 180s default (8 GB RAM machines need extra time).
+-> Embedding model re-downloads per docker compose run --rm (~10-15s overhead).
 
 **Phase 03 Gate: PASS**
-**Confidence: 0.93**
-**Tag: v0.3.0-docker-deploy (pending commit)**
+**Confidence: 0.96**
+**Tag: v0.3.0-docker-deploy**
 
 ---
 
-*Generated: 2026-03-28 | Phase 03 Task 3 complete*
+*Generated: 2026-03-28 | Updated with e2e manual test results*
