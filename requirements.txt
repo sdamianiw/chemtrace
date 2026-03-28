@@ -1,14 +1,14 @@
-# Core (Task 1)
-pdfplumber>=0.10.0
-pandas>=2.0.0
-python-dotenv>=1.0.0
+# Core
+pdfplumber==0.11.9
+pandas==3.0.1
+python-dotenv==1.2.2
 
-# Vector store (Task 2)
+# Vector store + embeddings
 chromadb>=1.0.0
-sentence-transformers>=2.2.0
+sentence-transformers==5.3.0
 
-# LLM client (Task 2)
+# LLM client (pure HTTP)
 requests>=2.31.0
 
-# Testing
-pytest>=7.0.0
+# Testing (not needed in Docker, but pin for dev)
+pytest>=9.0.0
