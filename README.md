@@ -31,7 +31,7 @@ bilingual CLI, Docker deployment in under 30 minutes.
 **Step 1: Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/chemtrace.git
+git clone https://github.com/sdamianiw/chemtrace.git
 cd chemtrace
 ```
 
@@ -111,7 +111,7 @@ PYTHONPATH=src python -m chemtrace export output/  # export data as CSV
 **Schritt 1: Repository klonen**
 
 ```bash
-git clone https://github.com/yourusername/chemtrace.git
+git clone https://github.com/sdamianiw/chemtrace.git
 cd chemtrace
 ```
 

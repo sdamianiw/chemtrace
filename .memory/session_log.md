@@ -4,31 +4,26 @@
 
 ## Last Session
 - **Date:** 2026-03-28
-- **Phase:** Phase 02 -- Task 3 complete. Phase 02 FULLY COMPLETE.
-- **What was done:** Integration testing + prompt verification + VERIFY.md
-  - Integration tests: 2/2 pass with live Ollama llama3.2:3b (68.98s)
-  - Manual test battery: 6/6 queries pass
-    - Q1: "electricity consumption Jan 2024" -> 478,800.0 kWh, correct source (PASS)
-    - Q2: "natural gas cost Jan 2024" -> 26,925.23 EUR, correct source (PASS)
-    - Q3: "total diesel consumption" -> 8,500.0 litres, correct source (PASS)
-    - Q4: "compare electricity costs Jan vs Mar" -> 116,461.4 EUR vs 108,096.61 EUR, both sources (PASS)
-    - Q5: "capital of Germany" -> exact refusal phrase (PASS)
-    - Q6: "write me a poem about energy" -> exact refusal phrase (PASS)
-  - Prompt tuning: 0 iterations needed -- system prompt worked correctly first try
-  - CODE_VERIFIER: 6/6 steps, 0 blocking findings, confidence 0.97/1.0
-  - VERIFY.md created at .specs/phases/02-rag-client/VERIFY.md
+- **Phase:** Phase 03 -- Task 2 COMPLETE.
+- **What was done:** README.md + LICENSE created
+  - README.md: 264 lines, bilingual EN/DE, 13 sections per TD-05 spec
+  - LICENSE: MIT, copyright "2026 Sebastian Damiani Wolf"
+  - .env.example: already correct (OLLAMA_MODEL=llama3.2:3b, OLLAMA_TIMEOUT=60) -- no changes made
+  - Verification: all 6 checks passed (line count 264, Schnellstart present, llama3.2:3b, OLLAMA_TIMEOUT, MIT License header, 0 dash bullets)
+  - Commit: ef1dd9c feat: Phase 03 Task 2 -- bilingual README + MIT LICENSE
 - **Verified:**
-  - `pytest tests/ -k "not integration"` -> 73/73 pass
-  - `pytest tests/test_rag.py -k "integration"` -> 2/2 pass
-  - Phase 02 gate: G-01 through G-11 = 10/11 PASS, 1/11 PARTIAL (NB-06, non-blocking)
-- **What's next:** Phase 03 -- Docker Deploy
-  - Read .specs/phases/03-docker/ if it exists
-  - Otherwise: create Phase 03 specs (Dockerfile, docker-compose.yml, health check)
-  - Tag v0.2.0-rag-client before starting Phase 03
+  - `wc -l README.md` -> 264 (within 200-280 range)
+  - `grep "Schnellstart" README.md` -> 1 match
+  - `grep -cP "^- " README.md` -> 0 (no dash bullet violations)
+  - `head -1 LICENSE` -> "MIT License"
+- **What's next:** Phase 03 -- Task 3
+  - Docker build test (docker build -t chemtrace:test .)
+  - Verify imports work inside container
+  - Create VERIFY.md for Phase 03 gate
+  - MANUAL gate: docker compose run full stack test (requires Docker Desktop + 16GB RAM free)
 - **Blockers:** None
 - **Pending decisions:** None
 - **Non-blocking issues:**
-  - NB-06: Residual HF Hub unauthenticated warning + BertModel LOAD REPORT on stderr
-    - NB-05 fix suppressed HF_HUB_DISABLE_TELEMETRY but not HF_TOKEN nag
-    - Fix: add TRANSFORMERS_VERBOSITY=error to vector_store.py env block (Phase 03 backlog)
-  - invoice_date for German-format stored as DD.MM.YYYY not ISO (pre-existing, Phase 01)
+  - NB-06: FIXED in Phase 03 Task 1 (TRANSFORMERS_VERBOSITY=error + HF_HUB_VERBOSITY=error)
+  - invoice_date stored as DD.MM.YYYY not ISO (German format, pre-existing Phase 01)
+  - Docker build NOT yet tested (Docker Desktop not running). Manual gate required for Task 3.
