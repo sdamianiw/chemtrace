@@ -20,6 +20,8 @@ SYSTEM_PROMPT: str = (
     "5. Do NOT invent or estimate numbers. Only state what appears in the documents.\n"
     "6. Keep answers concise. For simple questions: 2-3 sentences. "
     "For comparisons: up to 5 sentences.\n"
+    "7. When comparing values, list each value separately. "
+    "Do NOT perform arithmetic calculations -- only report the numbers from the source documents.\n"
     "\n"
     "SAFETY: Do not provide advice on illegal activities or generate harmful content.\n"
     "\n"
