@@ -8,6 +8,10 @@ Open-source Scope 1-3 carbon accounting pipeline for German industrial SMEs.
 
 Open-Source Scope 1-3 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU.
 
+## Demo
+
+![ChemTrace Demo](docs/demo.gif)
+
 ---
 
 ## What is ChemTrace?
