@@ -21,9 +21,26 @@ solutions require expensive SaaS subscriptions or cloud vendor lock-in. ChemTrac
 energy invoices (electricity, natural gas, diesel) from PDF files, calculates CO2e emissions
 using configurable factors, indexes the data in a local vector store, and answers natural
 language questions about consumption and emissions — all running entirely on your own machine.
+It also parses SAP CSV energy exports with automatic encoding, delimiter, and number format detection.
 
 Key features: zero cloud dependencies, zero API keys, audit-ready emission traceability,
 bilingual CLI, Docker deployment in under 30 minutes.
+
+---
+
+## Supported Input Formats
+
+| Format | Description | Auto-detected |
+|--------|-------------|---------------|
+| PDF | German energy invoices (electricity, natural gas, diesel) | By .pdf extension |
+| SAP CSV | SAP ECC/S4HANA energy exports (SE16N, ALV, Z-reports) | By .csv extension |
+
+SAP CSV specifics:
+→ Encoding: cp1252 (default), UTF-8, UTF-8 with BOM
+→ Delimiter: semicolon (default), comma, tab
+→ Number format: German (1.234,56) and English (1,234.56)
+→ Headers: optional (column inference for headerless files)
+→ Period formats: 2024-01, 01.2024, 202401, Jan 2024, P01/2024
 
 ---
 
@@ -53,6 +70,11 @@ docker compose run --rm chemtrace parse
 ```
 
 Expected output: 5 invoices parsed, CSV written to `./output/`.
+
+```bash
+# Parse SAP CSV energy exports
+docker compose run --rm -e CHEMTRACE_INPUT_DIR=./data/sample_sap chemtrace parse
+```
 
 **Step 4: Ask a question**
 
@@ -90,6 +112,11 @@ ollama pull llama3.2:3b
 
 ```bash
 PYTHONPATH=src python -m chemtrace parse --input-dir data/sample_invoices/
+```
+
+```bash
+# For SAP CSV files, set the input directory:
+CHEMTRACE_INPUT_DIR=data/sample_sap PYTHONPATH=src python -m chemtrace parse
 ```
 
 **Ask a question**
@@ -134,6 +161,11 @@ docker compose run --rm chemtrace parse
 
 Ergebnis: 5 Rechnungen verarbeitet, CSV-Ausgabe in `./output/`.
 
+```bash
+# SAP CSV Energiedaten parsen
+docker compose run --rm -e CHEMTRACE_INPUT_DIR=./data/sample_sap chemtrace parse
+```
+
 **Schritt 4: Frage stellen**
 
 ```bash
@@ -162,8 +194,8 @@ ChromaDB-Daten und Ollama-Modelle bleiben in Docker-Volumes zwischen den Laeufen
 │                                                         │
 │   ┌──────────┐   ┌──────────┐   ┌───────────────────┐  │
 │   │          │   │          │   │                   │  │
-│   │ PDF      │──→│ ETL      │──→│ Vector Store      │  │
-│   │ Parser   │   │ Pipeline │   │ (ChromaDB)        │  │
+│   │ PDF/CSV  │──→│ ETL      │──→│ Vector Store      │  │
+│   │ Parsers  │   │ Pipeline │   │ (ChromaDB)        │  │
 │   │          │   │          │   │                   │  │
 │   └──────────┘   └──────────┘   └────────┬──────────┘  │
 │                                          │              │
@@ -183,17 +215,19 @@ ChromaDB-Daten und Ollama-Modelle bleiben in Docker-Volumes zwischen den Laeufen
 **Data flow:**
 
 ```
-PDF files (input/)
+PDF files (data/sample_invoices/)
     │
     ▼
-pdf_parser.py ──→ raw dict per invoice (normalized fields)
-    │
-    ▼
-etl.py ──→ validate → enrich (EF calc) → DataFrame
-    │
-    ├──→ CSV export (output/)
-    ├──→ ChromaDB index (vector_store.py)
-    └──→ errors.csv (if parse failures)
+pdf_parser.py ──→ ParseResult
+                      │
+CSV files (data/sample_sap/)      │
+    │                              ▼
+    ▼                          etl.py
+sap_parser.py ──→ ParseResult ──→ (validate → enrich → store)
+                                   │
+                                   ├──→ CSV export (output/)
+                                   ├──→ ChromaDB index
+                                   └──→ errors.csv
 
 User question (CLI)
     │
