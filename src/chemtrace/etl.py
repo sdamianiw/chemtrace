@@ -14,6 +14,7 @@ import pandas as pd
 
 from chemtrace.config import Config, EmissionFactor, load_emission_factors
 from chemtrace.pdf_parser import LineItem, parse_invoice
+from chemtrace.sap_parser import parse_sap_csv
 from chemtrace.utils import build_content, compute_pdf_hash
 from chemtrace.vector_store import VectorStore
 
@@ -41,8 +42,9 @@ class PipelineResult:
 def run_pipeline(config: Config) -> PipelineResult:
     """Process all PDFs in input_dir. Validate → enrich → CSV → ChromaDB."""
     pdf_files = sorted(config.input_dir.glob("*.pdf"))
-    if not pdf_files:
-        logger.info("No PDFs found in %s", config.input_dir)
+    csv_files = sorted(config.input_dir.glob("*.csv"))
+    if not pdf_files and not csv_files:
+        logger.info("No PDFs or CSVs found in %s", config.input_dir)
         return PipelineResult(
             total_files=0, successful=0, failed=0,
             records=[], errors=[], csv_path=None,
@@ -54,7 +56,7 @@ def run_pipeline(config: Config) -> PipelineResult:
     records: list[dict] = []
     errors: list[dict] = []
 
-    # Phase 1: parse + validate all files (no I/O writes yet)
+    # Phase 1a: parse + validate all PDF files (no I/O writes yet)
     for pdf_path in pdf_files:
         result = parse_invoice(pdf_path)
         if not result.success:
@@ -70,6 +72,31 @@ def run_pipeline(config: Config) -> PipelineResult:
         record = _build_record(pdf_path, result.data, factors)
         records.append(record)
         logger.info("Parsed OK: %s", pdf_path.name)
+
+    # Phase 1b: SAP CSV processing (v0.5.0)
+    for csv_path in csv_files:
+        csv_results = parse_sap_csv(csv_path)
+        for result in csv_results:
+            if result.success:
+                record = _build_record(csv_path, result.data, factors)
+                # Override file-level hash with per-row hash (H-01 fix).
+                # vector_store.py line 41 uses r["pdf_hash"] as ChromaDB ID.
+                record["pdf_hash"] = result.data["row_hash"]
+                records.append(record)
+                logger.info(
+                    "Parsed CSV OK: %s",
+                    result.data.get("invoice_number", csv_path.name),
+                )
+            else:
+                errors.append({
+                    "filename": csv_path.name,
+                    "error_type": "csv_parse_error",
+                    "message": result.error or "Unknown CSV parse error",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                logger.warning(
+                    "CSV parse failed [%s]: %s", csv_path.name, result.error
+                )
 
     # Phase 2: export CSV (only after all parsing complete)
     csv_path: Path | None = None

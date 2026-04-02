@@ -1,0 +1,5 @@
+Werk;Zeitraum;Energieart;Verbrauch;Einheit;Kosten;Waehrung;Zaehler_ID;Bemerkung
+Essen Blending;2024-01;Strom;478800,0;kWh;116461,40;EUR;DE-ESS-001;Hauptzähler Produktion
+Essen Blending;2024-01;Erdgas;310800,0;kWh;24864,00;EUR;DE-ESS-G01;Kessel + Trockner
+Essen Blending;2024-02;Diesel;8500,0;Liter;13600,00;EUR;;Interne Logistik
+Essen Blending;2024-03;Strom;420000,0;kWh;108096,61;EUR;DE-ESS-001;Hauptzähler Produktion
