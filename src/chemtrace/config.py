@@ -47,6 +47,11 @@ class Config:
     # Embedding
     embedding_model: str = "all-MiniLM-L6-v2"
 
+    # VSME
+    vsme_template_path: Path = field(
+        default_factory=lambda: PROJECT_ROOT / "data" / "vsme_templates" / "VSME-Digital-Template-1_2_0.xlsx"
+    )
+
     def __post_init__(self) -> None:
         # Override defaults with environment variables if set
         if v := os.getenv("CHEMTRACE_INPUT_DIR"):
@@ -69,6 +74,8 @@ class Config:
             self.rag_max_tokens = int(v)
         if v := os.getenv("EMBEDDING_MODEL"):
             self.embedding_model = v
+        if v := os.getenv("CHEMTRACE_VSME_TEMPLATE"):
+            self.vsme_template_path = Path(v)
 
 
 def load_emission_factors(

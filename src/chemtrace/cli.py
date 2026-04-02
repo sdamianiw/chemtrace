@@ -3,7 +3,7 @@
 Commands:
     chemtrace parse  [--input-dir PATH] [--output-dir PATH]
     chemtrace status
-    chemtrace export [--output PATH]
+    chemtrace export [--output PATH] [--format csv|vsme] [--turnover EUR]
     chemtrace ask    "question"
 """
 
@@ -41,7 +41,15 @@ def main(argv: list[str] | None = None) -> None:
     p_export = subparsers.add_parser("export", help="Export invoice data to CSV")
     p_export.add_argument(
         "--output", type=Path, default=None,
-        help="Output CSV file path",
+        help="Output file path",
+    )
+    p_export.add_argument(
+        "--format", choices=["csv", "vsme"], default="csv",
+        help="Export format (default: csv)",
+    )
+    p_export.add_argument(
+        "--turnover", type=float, default=None,
+        help="Annual turnover in EUR for GHG intensity calculation",
     )
 
     # ask
@@ -133,12 +141,45 @@ def _cmd_export(args: argparse.Namespace) -> None:
         print("No data found. Run `chemtrace parse` first.", file=sys.stderr)
         sys.exit(1)
 
-    if args.output is not None:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(csv_path, args.output)
-        print(f"Exported -> {args.output}")
+    if args.format == "vsme":
+        _cmd_export_vsme(args, config, csv_path)
     else:
-        print(str(csv_path))
+        if args.output is not None:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(csv_path, args.output)
+            print(f"Exported -> {args.output}")
+        else:
+            print(str(csv_path))
+
+
+def _cmd_export_vsme(
+    args: argparse.Namespace,
+    config: "Config",
+    csv_path: Path,
+) -> None:
+    from chemtrace.vsme_export import export_vsme_b3
+
+    template_path = config.vsme_template_path
+    if not template_path.exists():
+        print(f"VSME template not found: {template_path}", file=sys.stderr)
+        sys.exit(1)
+
+    output_path = args.output if args.output is not None else config.output_dir / "vsme_report.xlsx"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    result = export_vsme_b3(csv_path, template_path, output_path, args.turnover)
+
+    print(f"VSME B3 exported -> {result.output_path}")
+    print(f"  Records   : {result.records_count}")
+    print(f"  Period    : {result.period_start} to {result.period_end}")
+    print(f"  Energy    : {result.total_energy_mwh:.2f} MWh")
+    print(f"  Scope 1   : {result.scope1_tco2eq:.4f} tCO2eq")
+    print(f"  Scope 2   : {result.scope2_tco2eq:.4f} tCO2eq")
+    if result.turnover_eur is not None:
+        print(f"  Turnover  : {result.turnover_eur:,.0f} EUR")
+
+    for warning in result.warnings:
+        print(f"  WARNING: {warning}", file=sys.stderr)
 
 
 def _cmd_ask(args: argparse.Namespace) -> None:

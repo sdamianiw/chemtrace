@@ -22,6 +22,7 @@ energy invoices (electricity, natural gas, diesel) from PDF files, calculates CO
 using configurable factors, indexes the data in a local vector store, and answers natural
 language questions about consumption and emissions — all running entirely on your own machine.
 It also parses SAP CSV energy exports with automatic encoding, delimiter, and number format detection.
+It can export energy and emissions data to the EFRAG VSME Digital Template for CSRD compliance.
 
 Key features: zero cloud dependencies, zero API keys, audit-ready emission traceability,
 bilingual CLI, Docker deployment in under 30 minutes.
@@ -132,6 +133,27 @@ PYTHONPATH=src python -m chemtrace status          # show indexed document count
 PYTHONPATH=src python -m chemtrace export output/  # export data as CSV
 ```
 
+### VSME Export (EFRAG Digital Template)
+
+ChemTrace can export energy and emissions data to the official EFRAG VSME
+Digital Template (v1.2.0). This fills Disclosure B3 (Energy and GHG Emissions)
+for CSRD/VSME compliance reporting.
+
+**Docker:**
+
+```bash
+docker compose run --rm chemtrace export --format vsme --output output/vsme_report.xlsx
+docker compose run --rm chemtrace export --format vsme --output output/vsme_report.xlsx --turnover 5000000
+```
+
+**Local:**
+
+```bash
+PYTHONPATH=src python -m chemtrace export --format vsme --output vsme_report.xlsx --turnover 5000000
+```
+
+The exported XLSX can be uploaded to EFRAG's online XBRL converter for machine-readable reporting.
+
 ---
 
 ## Schnellstart (Docker)
@@ -179,6 +201,19 @@ docker compose down
 ```
 
 ChromaDB-Daten und Ollama-Modelle bleiben in Docker-Volumes zwischen den Laeufen erhalten.
+
+### VSME-Export (EFRAG Digital Template)
+
+ChemTrace kann Energie- und Emissionsdaten in das offizielle EFRAG VSME
+Digital Template (v1.2.0) exportieren. Dies fuellt Angabe B3 (Energie und
+THG-Emissionen) fuer die CSRD/VSME-Berichterstattung.
+
+```bash
+docker compose run --rm chemtrace export --format vsme --output output/vsme_report.xlsx
+docker compose run --rm chemtrace export --format vsme --output output/vsme_report.xlsx --turnover 5000000
+```
+
+Die exportierte XLSX-Datei kann ueber den EFRAG XBRL-Konverter in maschinenlesbare Berichte umgewandelt werden.
 
 ---
 
