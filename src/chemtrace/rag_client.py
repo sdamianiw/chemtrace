@@ -75,8 +75,11 @@ def ask(question: str, config: Config, store: VectorStore) -> RAGResponse:
             model=config.ollama_model,
         )
 
-    # Step 3: Format context and build messages
+    # Step 3: Format context, inject pre-computed analytics, build messages
     context = format_context(docs)
+    analytics = compute_analytics(docs)
+    if analytics:
+        context = context + "\n\n" + analytics
     user_message = build_user_message(question, context)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -103,6 +106,121 @@ def ask(question: str, config: Config, store: VectorStore) -> RAGResponse:
         model=config.ollama_model,
         tokens_used=tokens_used,
     )
+
+
+def _safe_float(value: object) -> float | None:
+    """Convert a metadata value to float, returning None on failure."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def compute_analytics(documents: list[dict]) -> str:
+    """Pre-compute numeric diffs/percentages for groups of docs by energy_type.
+
+    Groups documents by energy_type metadata. For groups with 2+ docs,
+    computes chronological diffs for total_eur, consumption_kwh, emissions_tco2.
+    Returns formatted analytics string, or empty string if no comparisons possible.
+    """
+    if not documents or len(documents) < 2:
+        return ""
+
+    # Group by energy_type
+    groups: dict[str, list[dict]] = {}
+    for doc in documents:
+        meta = doc.get("metadata", {})
+        energy_type = meta.get("energy_type", "")
+        if not energy_type:
+            continue
+        groups.setdefault(energy_type, []).append(doc)
+
+    METRICS = [
+        ("Total cost", "total_eur", "EUR"),
+        ("Consumption", "consumption_kwh", "kWh"),
+        ("Emissions", "emissions_tco2", "tCO2"),
+    ]
+
+    sections: list[str] = []
+
+    for energy_type, group_docs in sorted(groups.items()):
+        if len(group_docs) < 2:
+            continue
+
+        sorted_docs = sorted(
+            group_docs,
+            key=lambda d: d.get("metadata", {}).get("billing_period_from", ""),
+        )
+
+        first_meta = sorted_docs[0].get("metadata", {})
+        last_meta = sorted_docs[-1].get("metadata", {})
+        first_period = first_meta.get("billing_period_from", "?")
+        last_period = last_meta.get("billing_period_from", "?")
+
+        lines: list[str] = []
+
+        if len(sorted_docs) == 2:
+            lines.append(
+                f"[{energy_type}] {first_period} -> {last_period} (2 invoices)"
+            )
+            for label, field, unit in METRICS:
+                val_first = _safe_float(first_meta.get(field))
+                val_last = _safe_float(last_meta.get(field))
+                if val_first is None or val_last is None:
+                    continue
+                diff = val_last - val_first
+                diff_str = f"{diff:+.2f}"
+                pct_str = ""
+                if val_first != 0:
+                    pct = (diff / val_first) * 100
+                    pct_str = f", {pct:+.2f}%"
+                lines.append(
+                    f"  {label}: {val_first:.2f} {unit} -> {val_last:.2f} {unit}"
+                    f" (diff: {diff_str} {unit}{pct_str})"
+                )
+        else:
+            periods = [
+                d.get("metadata", {}).get("billing_period_from", "?")
+                for d in sorted_docs
+            ]
+            lines.append(
+                f"[{energy_type}] {len(sorted_docs)} invoices: {', '.join(periods)}"
+            )
+            for label, field, unit in METRICS:
+                vals = [
+                    _safe_float(d.get("metadata", {}).get(field))
+                    for d in sorted_docs
+                ]
+                if any(v is None for v in vals):
+                    continue
+                val_strs = [f"{v:.2f}" for v in vals]  # type: ignore[arg-type]
+                lines.append(f"  {label}: {' -> '.join(val_strs)} {unit}")
+
+            for label, field, unit in METRICS:
+                val_first = _safe_float(first_meta.get(field))
+                val_last = _safe_float(last_meta.get(field))
+                if val_first is None or val_last is None:
+                    continue
+                diff = val_last - val_first
+                diff_str = f"{diff:+.2f}"
+                pct_str = ""
+                if val_first != 0:
+                    pct = (diff / val_first) * 100
+                    pct_str = f", {pct:+.2f}%"
+                lines.append(
+                    f"  First vs Last -- {label}: {val_first:.2f} -> {val_last:.2f} {unit}"
+                    f" (diff: {diff_str} {unit}{pct_str})"
+                )
+
+        if lines:
+            sections.append("\n".join(lines))
+
+    if not sections:
+        return ""
+
+    return "=== COMPUTED ANALYTICS ===\n\n" + "\n\n".join(sections)
 
 
 def _call_ollama(

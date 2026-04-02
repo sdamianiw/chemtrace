@@ -13,7 +13,7 @@ import requests
 
 from chemtrace.config import Config
 from chemtrace.prompts import SYSTEM_PROMPT, build_user_message, format_context
-from chemtrace.rag_client import RAGResponse, ask
+from chemtrace.rag_client import RAGResponse, ask, compute_analytics
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +40,35 @@ def _make_doc(filename: str, content: str, site: str = "TestSite") -> dict:
             "billing_period_from": "2024-01-01",
             "billing_period_to": "2024-01-31",
             "energy_type": "electricity",
+        },
+        "distance": 0.3,
+    }
+
+
+def _make_doc_full(
+    filename: str,
+    content: str = "Invoice content",
+    site: str = "TestSite",
+    energy_type: str = "electricity",
+    billing_period_from: str = "2024-01-01",
+    billing_period_to: str = "2024-01-31",
+    total_eur: float = 100.0,
+    consumption_kwh: float = 1000.0,
+    emissions_tco2: float = 10.0,
+) -> dict:
+    """Helper to build a document dict with full numeric metadata fields."""
+    return {
+        "id": f"hash_{filename}",
+        "document": content,
+        "metadata": {
+            "filename": filename,
+            "site": site,
+            "energy_type": energy_type,
+            "billing_period_from": billing_period_from,
+            "billing_period_to": billing_period_to,
+            "total_eur": total_eur,
+            "consumption_kwh": consumption_kwh,
+            "emissions_tco2": emissions_tco2,
         },
         "distance": 0.3,
     }
@@ -188,6 +217,139 @@ def test_build_user_message():
     assert "CONTEXT:" in msg
     assert "QUESTION: How much kWh?" in msg
     assert "=== DOCUMENT 1 ===" in msg
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for compute_analytics -- no Ollama needed
+# ---------------------------------------------------------------------------
+
+def test_compute_analytics_two_electricity_docs():
+    """Two electricity docs produce correct diff and percentage values."""
+    doc1 = _make_doc_full(
+        "Jan.pdf",
+        billing_period_from="2024-01-01",
+        billing_period_to="2024-01-31",
+        total_eur=95760.00,
+        consumption_kwh=478800.00,
+        emissions_tco2=181.94,
+    )
+    doc2 = _make_doc_full(
+        "Feb.pdf",
+        billing_period_from="2024-02-01",
+        billing_period_to="2024-02-29",
+        total_eur=102340.00,
+        consumption_kwh=511700.00,
+        emissions_tco2=194.45,
+    )
+    result = compute_analytics([doc1, doc2])
+
+    assert "COMPUTED ANALYTICS" in result
+    assert "[electricity]" in result
+    assert "2024-01-01" in result
+    assert "2024-02-01" in result
+    # Verify diff: 102340 - 95760 = 6580.00
+    assert "6580.00" in result
+    # Verify percentage: (6580 / 95760) * 100 = 6.87%
+    assert "6.87%" in result
+    # Must use ASCII arrow, not Unicode
+    assert "->" in result
+    assert "\u2192" not in result
+
+
+def test_compute_analytics_single_doc():
+    """Single document returns empty string (no comparison possible)."""
+    doc = _make_doc_full("Jan.pdf")
+    result = compute_analytics([doc])
+    assert result == ""
+
+
+def test_compute_analytics_mixed_types():
+    """Two electricity docs + one gas doc: analytics only for electricity group."""
+    elec1 = _make_doc_full(
+        "Elec_Jan.pdf",
+        energy_type="electricity",
+        billing_period_from="2024-01-01",
+        total_eur=95760.00,
+        consumption_kwh=478800.00,
+        emissions_tco2=181.94,
+    )
+    elec2 = _make_doc_full(
+        "Elec_Feb.pdf",
+        energy_type="electricity",
+        billing_period_from="2024-02-01",
+        total_eur=102340.00,
+        consumption_kwh=511700.00,
+        emissions_tco2=194.45,
+    )
+    gas1 = _make_doc_full(
+        "Gas_Jan.pdf",
+        energy_type="natural_gas",
+        billing_period_from="2024-01-01",
+        total_eur=12000.00,
+        consumption_kwh=95000.00,
+        emissions_tco2=18.00,
+    )
+    result = compute_analytics([elec1, elec2, gas1])
+
+    assert "[electricity]" in result
+    assert "[natural_gas]" not in result
+
+
+def test_compute_analytics_missing_field():
+    """Missing emissions_tco2 on one doc skips that metric without crashing."""
+    doc1 = _make_doc_full(
+        "Jan.pdf",
+        billing_period_from="2024-01-01",
+        total_eur=95760.00,
+        consumption_kwh=478800.00,
+        emissions_tco2=181.94,
+    )
+    doc2 = _make_doc_full(
+        "Feb.pdf",
+        billing_period_from="2024-02-01",
+        total_eur=102340.00,
+        consumption_kwh=511700.00,
+        emissions_tco2=194.45,
+    )
+    # Remove emissions_tco2 from doc2 metadata
+    del doc2["metadata"]["emissions_tco2"]
+
+    result = compute_analytics([doc1, doc2])
+
+    assert "COMPUTED ANALYTICS" in result
+    assert "Total cost" in result
+    assert "Consumption" in result
+    assert "Emissions" not in result
+
+
+def test_compute_analytics_zero_value():
+    """First doc total_eur=0: shows diff but omits percentage to avoid division by zero."""
+    doc1 = _make_doc_full(
+        "Jan.pdf",
+        billing_period_from="2024-01-01",
+        total_eur=0.0,
+        consumption_kwh=478800.00,
+        emissions_tco2=181.94,
+    )
+    doc2 = _make_doc_full(
+        "Feb.pdf",
+        billing_period_from="2024-02-01",
+        total_eur=6580.00,
+        consumption_kwh=511700.00,
+        emissions_tco2=194.45,
+    )
+    result = compute_analytics([doc1, doc2])
+
+    assert "COMPUTED ANALYTICS" in result
+    # diff for total_eur must be present
+    assert "6580.00" in result
+    # Find the Total cost line and verify it has no percentage
+    lines = result.splitlines()
+    cost_line = next((l for l in lines if "Total cost" in l), "")
+    assert "%" not in cost_line
+    # Consumption and Emissions should still have percentages (non-zero baselines)
+    kwh_line = next((l for l in lines if "Consumption" in l), "")
+    assert "%" in kwh_line
 
 
 # ---------------------------------------------------------------------------
