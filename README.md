@@ -10,7 +10,7 @@ Open-Source Scope 1-3 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU.
 
 ## Demo
 
-![ChemTrace Demo](docs/demo.gif)
+![ChemTrace VSME Export](docs/assets/demo_vsme_export.gif)
 
 ---
 
