@@ -213,3 +213,6 @@ def _cmd_ask(args: argparse.Namespace) -> None:
 
     if response.tokens_used:
         print(f"(Model: {response.model}, Tokens: {response.tokens_used})")
+
+if __name__ == "__main__":
+    main()
