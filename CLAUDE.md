@@ -1,60 +1,35 @@
-# CLAUDE.md — ChemTrace OSS
+# ChemTrace OSS
 
-## Project
-Open-source Scope 1-3 carbon accounting pipeline. Python + pdfplumber + ChromaDB + Ollama.
-Repo: C:\Chemtrace (/c/Chemtrace). Python 3.11+, Cursor + Claude Code (Max), Windows 11.
+Open-source Scope 1-3 carbon accounting pipeline for German industrial SMEs facing CSRD 2026-2027 compliance. Python 3.11 + pdfplumber + ChromaDB + Ollama (llama3.2:3b) + sentence-transformers. Repo `C:\Chemtrace`, Windows 11, Cursor + Claude Code.
 
-## Session Start Protocol
-1. Read .memory/session_log.md → know where we left off
-2. Read .memory/lessons.md → never repeat past mistakes
-3. Read relevant .specs/ files for current phase
-4. Begin work
+Behavioral guidelines are global (`~/.claude/CLAUDE.md` + the `karpathy-guidelines` / `plan-preflight` skills) and not repeated here. Below is what only this project knows.
 
-## Autonomy Level
-Execute autonomously. Do NOT ask permission for:
-→ Reading any file, running tests, running python, git status/diff/log
-→ Creating/editing files within scope of current task constraints
-→ Fixing bugs found during verification (apply CODE_VERIFIER.md, fix, log lesson)
-→ Running verification commands, grep, lint, type checks
+## Hard constraints
+Zero cloud dependencies (no Azure, no paid APIs) · Ollama-only LLM · Docker deployment · no n8n/Supabase · digital-native PDFs only, no OCR. 8-10h/week budget, so scope prioritization is ruthless.
 
-STOP and ask ONLY for these 5 cases:
-1. Architectural change (new module, new dependency, interface change)
-2. Rewriting >50 lines of existing code
-3. Touching 3+ files not listed in task constraints
-4. Installing new dependencies (pip install, npm install)
-5. Modifying .specs/ or .skills/ files
+## Session protocol
+1. Read `.memory/session_log.md` (where we left off) and `.memory/lessons.md` (past mistakes).
+2. Read the `.specs/` files for the current phase. Never code blind.
+3. At session end: overwrite `session_log.md`, append new lessons and decisions, then `git add .memory/ && git commit -m "memory: session update"`.
 
-Everything else: execute → log → continue.
-## Workflow Orchestration
-→ Plan mode for 3+ step tasks. If sideways → STOP, re-plan.
-→ One task = one commit. git status clean after every block.
-→ After ANY code execution: apply .skills/CODE_VERIFIER.md autonomously before commit.
-→ If CODE_VERIFIER finds issues: fix them immediately, do not ask. Log fix in .memory/lessons.md.
-→ Use subagent thinking: break complex problems into independent verification steps.
-## Self-Improvement Loop
-→ After ANY error or correction: append to .memory/lessons.md immediately.
-→ After ANY significant decision: append to .memory/decisions.md.
-→ Pattern: Error → Root cause analysis → Create prevention rule → Apply rule going forward.
-→ Review lessons at session start. If a rule prevented an error, note it.
-→ Goal: recursive improvement. Error rate must decrease over sessions.
-## Session End Protocol
-1. Update .memory/session_log.md (overwrite with current session summary)
-2. Append any new lessons to .memory/lessons.md
-3. Append any new decisions to .memory/decisions.md
-4. Commit memory files: git add .memory/ && git commit -m "memory: session update"
+## Autonomy contract
+Execute without asking: reading files, running tests/python/git status-diff-log, creating or editing files inside the current task's constraints, fixing bugs found during verification, running verification/grep/lint/type checks.
 
-## Rules (HARD)
-→ Before ANY task: read relevant .specs/ files. Never code blind.
-→ Before touching any file: reason about root cause → minimal fix → downstream impact.
-→ No hardcoded values. All config via .env or constants with source citation.
-→ No temp fixes. Find root causes. Senior developer standards.
-→ ParseResult wrapper: never throw from parser. Always return structured response.
-→ /clear (not /exit) for fresh context. If context >40%: stop, commit, fresh session.
+STOP and ask for exactly these five: (1) architectural change — new module, new dependency, interface change · (2) rewriting more than 50 lines of existing code · (3) touching 3+ files outside the task constraints · (4) installing dependencies · (5) modifying `.specs/` or `.skills/`.
+
+Everything else: execute, log, continue.
+
+## Project rules (HARD)
+- Apply `.skills/CODE_VERIFIER.md` after any code execution, before commit. If it finds something, fix it without asking and log the fix in `.memory/lessons.md`.
+- **ParseResult wrapper:** a parser never throws. It always returns a structured result.
+- No hardcoded values — config via `.env` or constants with a source citation.
+- One task = one commit; `git status` clean after every block.
+- `PYTHONPATH="C:\Chemtrace\src"` prefixes every python/pytest call (`pip install -e .` fails on this machine).
+- Never print non-ASCII in CLI output: Windows cp1252 crashes on `→`, `✓` and friends.
+- `/clear` (not `/exit`) for fresh context. Above ~40% context: stop, commit, new session.
 
 ## Structure
-→ .specs/ → REQUIREMENTS.md, ARCHITECTURE.md, phase plans (READ-ONLY)
-→ .skills/ → PROMPT_CONTRACT.md, CODE_VERIFIER.md (apply autonomously)
-→ .memory/ → lessons.md, decisions.md, session_log.md (READ + WRITE every session)
-→ src/chemtrace/ → all source code
-→ data/ → sample_invoices/, emission_factors/
-→ tests/ → pytest suite
+`.specs/` REQUIREMENTS + ARCHITECTURE + phase plans (READ-ONLY) · `.skills/` PROMPT_CONTRACT + CODE_VERIFIER (apply autonomously) · `.memory/` lessons, decisions, session_log (read + write every session) · `src/chemtrace/` source · `data/` sample_invoices + emission_factors + sample_sap · `tests/` pytest.
+
+## State
+Shipped through **v0.6.0-vsme-export**; last commit 2026-04-03, so the repo has been dormant — check `git log` before trusting any status note. Phase 04's remaining work was non-code signal work (outreach, Chemspec Europe registration).
