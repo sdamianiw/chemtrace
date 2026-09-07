@@ -25,8 +25,7 @@ questions about consumption and emissions in plain language. It also reads SAP C
 detecting encoding, delimiter and number format on its own, and exports to the EFRAG VSME Digital
 Template. All of it runs on your own machine.
 
-No cloud dependencies and no API keys. Every emission figure traces back to its factor, the CLI is
-bilingual, and a Docker deployment takes under 30 minutes.
+No cloud dependencies and no API keys. Every emission figure traces back to the factor that produced it. The CLI is bilingual and a Docker deployment takes under 30 minutes.
 
 ---
 
@@ -321,7 +320,7 @@ To add a new energy type: add one entry to `factors.json`, no code changes requi
 | RAM | Recommended Setup | Default Model |
 |---|---|---|
 | 8 GB | Local development only (no Docker) | `llama3.2:3b` |
-| 16 GB | Docker (recommended minimum) | `llama3.2:3b` |
+| 4 GB (WSL2 allocation) | Docker (recommended minimum, small model) | `llama3.2:3b` |
 | 32 GB+ | Docker + larger models | `llama3.1:8b` or any |
 
 To switch models: set `OLLAMA_MODEL=llama3.1:8b` in your `.env` file.

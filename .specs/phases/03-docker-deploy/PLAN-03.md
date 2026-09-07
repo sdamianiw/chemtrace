@@ -164,8 +164,8 @@ CONSTRAINTS:
 
 README STRUCTURE (follow this order):
 1. Title "ChemTrace OSS" + badges (MIT, Python 3.11, Docker)
-2. Tagline EN: "Open-source Scope 1-3 carbon accounting pipeline for German industrial SMEs."
-3. Tagline DE: "Open-Source Scope 1-3 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU."
+2. Tagline EN: "Open-source Scope 1-2 carbon accounting pipeline for German industrial SMEs."
+3. Tagline DE: "Open-Source Scope 1-2 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU."
 4. "What is ChemTrace?" section (EN, 2-3 sentences: CSRD problem, what it does, key features)
 5. "Quick Start (Docker)" section (EN, step-by-step with commands):
    → git clone, cd, docker compose up -d ollama, wait for healthy,

@@ -10,7 +10,7 @@
 ## 1. PROJECT IDENTITY
 
 **Name:** ChemTrace OSS
-**Tagline:** Open-source Scope 1-3 carbon accounting pipeline. Deployable in 30 minutes. Audit-ready. Zero vendor lock-in.
+**Tagline:** Open-source Scope 1-2 carbon accounting pipeline. Deployable in 30 minutes. Traceable to its emission factor. Zero vendor lock-in.
 **Target users:** German industrial SMEs (50-500 employees) facing CSRD 2026-2027 deadlines.
 **Repo path (local):** `C:\Chemtrace` → Git Bash: `/c/Chemtrace`
 **License:** MIT (pending confirmation)
