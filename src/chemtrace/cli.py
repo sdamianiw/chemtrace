@@ -19,7 +19,7 @@ def main(argv: list[str] | None = None) -> None:
     """Entry point for the chemtrace CLI."""
     parser = argparse.ArgumentParser(
         prog="chemtrace",
-        description="ChemTrace: Open-source Scope 1-3 carbon accounting pipeline",
+        description="ChemTrace: Open-source Scope 1-2 carbon accounting pipeline",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 

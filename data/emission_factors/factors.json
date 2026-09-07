@@ -4,7 +4,7 @@
     "unit": "tCO2e/kWh",
     "source": "UBA Emissionsfaktoren",
     "year": 2024,
-    "note": "[Pendiente verificación UBA 2024]"
+    "note": "Placeholder value; verify against the published UBA 2024 factor before any reported use."
   },
   "natural_gas": {
     "value": 0.000202,

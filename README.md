@@ -4,9 +4,9 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/docker-compose-blue.svg)](docker-compose.yml)
 
-Open-source Scope 1-3 carbon accounting pipeline for German industrial SMEs.
+Open-source Scope 1-2 carbon accounting pipeline for German industrial SMEs.
 
-Open-Source Scope 1-3 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU.
+Open-Source Scope 1-2 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU.
 
 ## Demo
 
@@ -16,11 +16,11 @@ Open-Source Scope 1-3 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU.
 
 ## What is ChemTrace?
 
-German industrial SMEs face mandatory CSRD Scope 1-3 reporting from 2026-2027, but existing
+German industrial SMEs face mandatory CSRD Scope 1-2 reporting from 2026-2027, with Scope 3 to follow, but existing
 solutions require expensive SaaS subscriptions or cloud vendor lock-in. ChemTrace parses
 energy invoices (electricity, natural gas, diesel) from PDF files, calculates CO2e emissions
 using configurable factors, indexes the data in a local vector store, and answers natural
-language questions about consumption and emissions — all running entirely on your own machine.
+language questions about consumption and emissions, all running entirely on your own machine.
 It also parses SAP CSV energy exports with automatic encoding, delimiter, and number format detection.
 It can export energy and emissions data to the EFRAG VSME Digital Template for CSRD compliance.
 
@@ -297,13 +297,21 @@ Copy `.env.example` to `.env` and edit as needed. Docker Compose reads `.env` au
 Emission factors are stored in `data/emission_factors/factors.json` with source citations.
 Every CO2e calculation is fully traceable: `energy_amount × factor = emissions_tco2`.
 
+> The bundled factors.json ships demo-grade values. Only the electricity factor traces to a real source (UBA, unverified); natural gas and diesel are typical European placeholders. Replace all three before using ChemTrace for a filed report.
+
 | Energy Type | Factor | Unit | Source | Year |
 |---|---|---|---|---|
 | Electricity (DE grid mix) | 0.000380 | tCO2e/kWh | UBA Emissionsfaktoren | 2024 |
 | Natural Gas | 0.000202 | tCO2e/kWh | Synthetic ESG Report | 2024 |
 | Diesel | 0.002680 | tCO2e/litre | Synthetic ESG Report (DEFRA 2024) | 2024 |
 
-To add a new energy type: add one entry to `factors.json` — no code changes required.
+To add a new energy type: add one entry to `factors.json`, no code changes required.
+
+---
+
+## Limitations
+
+- Scope 3 is out of scope for v1: `vsme_export.py` writes `G29 = False` (no Scope 3 disclosure) into the VSME workbook.
 
 ---
 
@@ -333,7 +341,7 @@ ChemTrace is an early-stage OSS project. Contributions are welcome.
 
 → Open an issue to discuss a bug or feature before submitting a PR.
 → Follow the existing code style (type hints, docstrings, no hardcoded values).
-→ All PRs must pass `pytest tests/` (73 unit tests + 2 integration tests).
+→ All PRs must pass `pytest tests/` (155 tests).
 → New parsers: add regex patterns to `src/chemtrace/parser_patterns.py`.
 → New emission factors: add entries to `data/emission_factors/factors.json` with source citation.
 
