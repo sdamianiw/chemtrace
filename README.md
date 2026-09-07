@@ -16,16 +16,17 @@ Open-Source Scope 1-2 Carbon-Accounting-Pipeline fuer deutsche Industrie-KMU.
 
 ## What is ChemTrace?
 
-German industrial SMEs face mandatory CSRD Scope 1-2 reporting from 2026-2027, with Scope 3 to follow, but existing
-solutions require expensive SaaS subscriptions or cloud vendor lock-in. ChemTrace parses
-energy invoices (electricity, natural gas, diesel) from PDF files, calculates CO2e emissions
-using configurable factors, indexes the data in a local vector store, and answers natural
-language questions about consumption and emissions, all running entirely on your own machine.
-It also parses SAP CSV energy exports with automatic encoding, delimiter, and number format detection.
-It can export energy and emissions data to the EFRAG VSME Digital Template for CSRD compliance.
+German industrial SMEs have to report Scope 1-2 under CSRD from 2026-2027, with Scope 3 to follow.
+The tools I looked at for it are SaaS subscriptions or tied to one cloud vendor.
 
-Key features: zero cloud dependencies, zero API keys, audit-ready emission traceability,
-bilingual CLI, Docker deployment in under 30 minutes.
+ChemTrace parses energy invoices (electricity, natural gas, diesel) from PDF files, calculates
+CO2e emissions using configurable factors, indexes the data in a local vector store, and answers
+questions about consumption and emissions in plain language. It also reads SAP CSV energy exports,
+detecting encoding, delimiter and number format on its own, and exports to the EFRAG VSME Digital
+Template. All of it runs on your own machine.
+
+No cloud dependencies and no API keys. Every emission figure traces back to its factor, the CLI is
+bilingual, and a Docker deployment takes under 30 minutes.
 
 ---
 
@@ -89,7 +90,7 @@ docker compose run --rm chemtrace ask "What was electricity consumption in Jan 2
 docker compose down
 ```
 
-ChromaDB data and Ollama models are preserved in Docker named volumes between runs.
+ChromaDB data and Ollama models live in Docker named volumes, so they survive between runs.
 
 ---
 
@@ -152,7 +153,7 @@ docker compose run --rm chemtrace export --format vsme --output output/vsme_repo
 PYTHONPATH=src python -m chemtrace export --format vsme --output vsme_report.xlsx --turnover 5000000
 ```
 
-The exported XLSX can be uploaded to EFRAG's online XBRL converter for machine-readable reporting.
+The exported XLSX goes into EFRAG's online XBRL converter to produce a machine-readable report.
 
 ---
 
@@ -295,7 +296,7 @@ Copy `.env.example` to `.env` and edit as needed. Docker Compose reads `.env` au
 ## Emission Factors
 
 Emission factors are stored in `data/emission_factors/factors.json` with source citations.
-Every CO2e calculation is fully traceable: `energy_amount × factor = emissions_tco2`.
+Every CO2e number comes from one line: `energy_amount × factor = emissions_tco2`.
 
 > The bundled factors.json ships demo-grade values. Only the electricity factor traces to a real source (UBA, unverified); natural gas and diesel are typical European placeholders. Replace all three before using ChemTrace for a filed report.
 
@@ -331,13 +332,13 @@ To switch models: set `OLLAMA_MODEL=llama3.1:8b` in your `.env` file.
 memory=4GB
 ```
 
-After editing, run `wsl --shutdown` and restart Docker Desktop. With `memory=2GB` or less, Ollama cannot load the model and will fail with HTTP 500.
+After editing, run `wsl --shutdown` and restart Docker Desktop. With `memory=2GB` or less, Ollama cannot load the model and fails with HTTP 500.
 
 ---
 
 ## Contributing
 
-ChemTrace is an early-stage OSS project. Contributions are welcome.
+ChemTrace is early-stage. Contributions are welcome.
 
 → Open an issue to discuss a bug or feature before submitting a PR.
 → Follow the existing code style (type hints, docstrings, no hardcoded values).
